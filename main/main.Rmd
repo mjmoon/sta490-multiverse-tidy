@@ -10,7 +10,7 @@ runtime: shiny_prerendered
 ---
 
 ```{r setup, include=FALSE}
-packages <- c("tidyverse", "learnr", "knitr", "ggtext", "remotes")
+packages <- c("tidyverse", "learnr", "knitr", "ggtext")
 check <- lapply(
   packages,
   function(x) {
@@ -20,9 +20,6 @@ check <- lapply(
         INSTALL_opts = "--no-lock",
         repos = "http://cran.us.r-project.org")
 })
-remotes::install_github(
-  "mverseanalysis/mverse", ref = "release", 
-  upgrade = "never", quiet = TRUE, repos = "http://cran.us.r-project.org")
 knitr::opts_chunk$set(echo = FALSE)
 soccer <- read.csv("https://raw.githubusercontent.com/mjmoon/sta490-soccer/main/data/soccer.csv")
 ```

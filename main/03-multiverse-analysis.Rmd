@@ -31,7 +31,7 @@ ggplot(tmp, aes(y = position, x =redCards / games, colour = position_group)) +
              labeller = as_labeller(~ paste0('<span style="color:',
              RColorBrewer::brewer.pal(4, "Set2")[1:4], ';">',.x, '</span>'))) +
   labs(y = NULL, x = "Proportion of red card received per match", 
-       caption = stringr::str_wrap("Figure 1. The violin plots display the distributions of each player's proportion of red cards received in a game and the squares indicate the median value for each position. They suggest that the likelihood of receiving a red card in a soccer match may vary by position.", width = 90)) +
+       caption = stringr::str_wrap("Figure 1. The violins display the distributions of each player's proportion of games where they received a red card and the squares indicate the median value for each position. They suggest that the likelihood of receiving a red card in a soccer match may vary by position.", width = 95)) +
   theme(axis.text.y = element_blank(),
         axis.title.x.top = element_text(color = "#555555", size = 8),
         axis.text.x.top = element_text(color = "#555555", size = 8),
@@ -64,7 +64,7 @@ library(tidyverse)
 
 We will start by creating columns that correspond to the alternative groupings for players' positions. We will name these grouped position columns as `position_common` for the common grouping in Figure 1 and `position_fld_vs_gk` for the fielder vs goalkeeper grouping.
 
-```{r tidy-tut-branch, echo=TRUE}
+```{r tidy-tut-branch, echo=TRUE, eval=FALSE}
 soccer <- soccer %>%
   mutate(
     position_common = forcats::fct_collapse( 
@@ -81,7 +81,7 @@ soccer <- soccer %>%
 
 We will then use `formula()` to specify the four model specifications. This effectively specifies the four universes for the multiverse analysis.
 
-```{r tidy-tut-formula, echo=TRUE}
+```{r tidy-tut-formula, echo=TRUE, eval=FALSE}
 model_1 <- formula(cbind(redCards, games - redCards) ~ skintone + position)
 model_2 <- formula(cbind(redCards, games - redCards) ~ skintone + position_common)
 model_3 <- formula(cbind(redCards, games - redCards) ~ skintone + position_fld_vs_gk)
@@ -93,9 +93,9 @@ model_4 <- formula(cbind(redCards, games - redCards) ~ skintone)
 
 We will now call `glm()` for each model specified. To minimize redundancy in codes, we will place the four `formula` objects in a list and use vectorized calls. 
 
-```{r tidy-tut-glm, echo=TRUE}
+```{r tidy-tut-glm, echo=TRUE, eval=FALSE}
 models <- list(model_1, model_2, model_3, model_4)
-fitted <- lapply(models, function(x) {
+multiverse_fit <- lapply(models, function(x) {
   glm(x, family = binomial(link = "logit"), data = soccer)
 }) # lapply applies the function(m) {...} to each member of the models list
 ```
@@ -103,19 +103,20 @@ fitted <- lapply(models, function(x) {
 The result is a list of fitted `glm` object. You can access each by index. For example, the following code displays the estiamted coefficients from the fourth universe. As expected, it displays the same result as the result of the model fitted in _Logistic regression analysis in R_ section.
 
 ```{r tidy-tut-glm-list, echo=TRUE, eval=FALSE}
-summary(fitted[[4]])$coef
+summary(multiverse_fit[[4]])$coef
 ```
 
 ```{r tidy-tut-glm-list-disp}
-summary(fitted[[4]])$coef %>% as.data.frame()
+load("03-multiverse-analysis.RData")
+summary(multiverse_fit[[4]])$coef %>% as.data.frame()
 ```
 
 ### Results
 
-We can use the `lapply()` strategy again for extracting the coefficients from each fitted results knowing `fitted` is a list of fitted objects. Inside the function we will call `broom::tidy()` with `exponentiate = TRUE, conf.int = TRUE, conf.level = .95` as before to extract the estimates and 95% confidence intervals in odd scale. We will focus our attention to the variable interest `skintone` by filtering the result. The resulting object is again a list. To merge the results to a single data frame, we can use `bind_rows()`.
+We can use the `lapply()` strategy again for extracting the coefficients from each fitted results knowing `multiverse_fit` is a list of fitted objects. Inside the function we will call `broom::tidy()` with `exponentiate = TRUE, conf.int = TRUE, conf.level = .95` as before to extract the estimates and 95% confidence intervals in odd scale. We will focus our attention to the variable interest `skintone` by filtering the result. The resulting object is again a list. To merge the results to a single data frame, we can use `bind_rows()`.
 
-```{r tidy-tut-glm-res, echo=TRUE}
-multires <- lapply(fitted, function(x) {
+```{r tidy-tut-glm-res, echo=TRUE, eval=FALSE}
+multires <- lapply(multiverse_fit, function(x) {
   broom::tidy(x, exponentiate = TRUE, conf.int = TRUE, conf.level = .95) %>%
     filter(term == "skintone") # filter for skintone
 })
@@ -123,10 +124,10 @@ bind_rows(multires) # join the results
 ```
 
 ```{r tidy-tut-glm-res-save}
-res <- bind_rows(multires)
+multiverse_res
 ```
 
-From the table above, we observe that the results are consistent in direction and statistical significance at 95% confidence level across the multiverse of analysis paths. The results indicate that players with very dark skin tones suffer approximately `r sprintf("%.1f%%", min(res$estimate) * 100 - 100)`~`r sprintf("%.1f%%", max(res$estimate) * 100 - 100)` (Odd ratio 95% CIs ranging approximately within [`r sprintf("%.2f", min(res$conf.low))`, `r sprintf("%.2f", max(res$conf.high))`]) higher odds of getting a red card during match compared to their colleagues with very light skin tones. 
+From the table above, we observe that the results are consistent in direction and statistical significance at 95% confidence level across the multiverse of analysis paths. The results indicate that players with very dark skin tones suffer approximately `r sprintf("%.1f%%", min(multiverse_res$estimate) * 100 - 100)`~`r sprintf("%.1f%%", max(multiverse_res$estimate) * 100 - 100)` (Odd ratio 95% CIs ranging approximately within [`r sprintf("%.2f", min(multiverse_res$conf.low))`, `r sprintf("%.2f", max(multiverse_res$conf.high))`]) higher odds of getting a red card during match compared to their colleagues with very light skin tones. 
 
 ```{=html}
 <hr />
