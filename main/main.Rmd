@@ -10,7 +10,7 @@ runtime: shiny_prerendered
 ---
 
 ```{r setup, include=FALSE}
-packages <- c("tidyverse", "learnr", "knitr", "ggtext")
+packages <- c("tidyverse", "learnr", "knitr")
 check <- lapply(
   packages,
   function(x) {
